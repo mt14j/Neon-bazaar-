@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ثبت سفارش</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root{
+  --bg:#10141c;
+  --bg-soft:#161c28;
+  --card:#1b2232;
+  --card-2:#212a3d;
+  --border:rgba(255,255,255,0.09);
+  --accent:#e0a63a;
+  --accent-soft:rgba(224,166,58,0.14);
+  --teal:#3fb6a3;
+  --teal-soft:rgba(63,182,163,0.14);
+  --text:#eef1f6;
+  --muted:#8891a6;
+  --danger:#e2665f;
+  --danger-soft:rgba(226,102,95,0.14);
+  --radius:18px;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:'Vazirmatn', sans-serif;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(224,166,58,0.08), transparent),
+    radial-gradient(ellipse 900px 500px at 85% 110%, rgba(63,182,163,0.08), transparent),
+    var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px 16px;
+}
+.mono{ font-family:'JetBrains Mono', monospace; }
+
+/* ===== Wizard shell ===== */
+.wrap{ width:100%; max-width:460px; }
+.eyebrow{
+  display:flex; align-items:center; gap:8px;
+  font-size:12.5px; color:var(--muted); letter-spacing:.3px; margin-bottom:14px;
+}
+.eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); }
+
+.card{
+  background:linear-gradient(180deg, var(--card-2), var(--card));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:28px 24px 24px;
+  box-shadow:0 20px 60px -20px rgba(0,0,0,0.6);
+  position:relative;
+  overflow:hidden;
+}
+.card::before{
+  content:"";
+  position:absolute; inset:0 0 auto 0; height:3px;
+  background:linear-gradient(90deg, var(--accent), var(--teal));
+}
+
+h1{ font-size:20px; font-weight:800; margin-bottom:4px; }
+.sub{ color:var(--muted); font-size:13.5px; margin-bottom:22px; }
+
+/* route / progress */
+.route{ display:flex; align-items:center; margin-bottom:26px; }
+.stop{
+  width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12.5px; font-weight:700; font-family:'JetBrains Mono',monospace;
+  background:var(--bg-soft); color:var(--muted); border:1.5px solid var(--border);
+  flex-shrink:0; transition:all .35s ease; z-index:1;
+}
+.stop.done{ background:var(--teal); border-color:var(--teal); color:#0a1512; }
+.stop.active{ background:var(--accent); border-color:var(--accent); color:#231600; box-shadow:0 0 0 5px var(--accent-soft); }
+.seg{
+  flex:1; height:2px; background:var(--border); position:relative; margin:0 -1px;
+}
+.seg i{
+  position:absolute; inset:0; background:var(--teal); width:0%;
+  transition:width .4s ease;
+}
+
+/* fields */
+.field{ margin-bottom:16px; }
+label{ display:block; font-size:13.5px; color:var(--muted); margin-bottom:8px; font-weight:500; }
+input[type=text], input[type=tel], textarea{
+  width:100%; background:var(--bg-soft); border:1.5px solid var(--border);
+  border-radius:12px; padding:13px 14px; color:var(--text); font-size:15px;
+  font-family:'Vazirmatn', sans-serif; outline:none; transition:border-color .2s, box-shadow .2s;
+}
+input:focus, textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+textarea{ min-height:96px; resize:vertical; line-height:1.7; }
+.hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+.err{ font-size:12.5px; color:var(--danger); margin-top:6px; display:none; }
+.field.invalid input, .field.invalid textarea{ border-color:var(--danger); }
+.field.invalid .err{ display:block; }
+
+.icon-input{ position:relative; }
+.icon-input span{
+  position:absolute; inset-inline-start:14px; top:50%; transform:translateY(-50%);
+  color:var(--muted); font-size:14px; pointer-events:none;
+}
+.icon-input input{ padding-inline-start:34px; }
+
+/* nav buttons */
+.nav{ display:flex; gap:10px; margin-top:22px; }
+button{ font-family:inherit; cursor:pointer; border:none; outline:none; }
+.btn{
+  flex:1; padding:13px 16px; border-radius:12px; font-size:14.5px; font-weight:700;
+  transition:transform .15s, filter .15s; -webkit-tap-highlight-color:transparent;
+}
+.btn:active{ transform:scale(0.98); }
+.btn-primary{ background:linear-gradient(135deg, var(--accent), #c98f2e); color:#241700; }
+.btn-primary:hover{ filter:brightness(1.08); }
+.btn-ghost{ background:var(--bg-soft); color:var(--muted); border:1.5px solid var(--border); flex:0 0 92px; }
+.btn-ghost:hover{ color:var(--text); }
+.btn-primary[disabled]{ opacity:.5; pointer-events:none; }
+
+/* ===== success ticket ===== */
+.ticket{ display:none; text-align:center; }
+.ticket.show{ display:block; }
+.stub{
+  position:relative; background:var(--bg-soft); border:1.5px dashed var(--border);
+  border-radius:16px; padding:26px 20px 20px; margin:18px 0 22px;
+}
+.stub::before, .stub::after{
+  content:""; position:absolute; width:18px; height:18px; border-radius:50%;
+  background:var(--card); top:50%; transform:translateY(-50%);
+}
+.stub::before{ inset-inline-start:-10px; }
+.stub::after{ inset-inline-end:-10px; }
+.stub .label{ font-size:12px; color:var(--muted); margin-bottom:8px; }
+.stub .code{ font-size:26px; font-weight:700; letter-spacing:1px; color:var(--accent); }
+.barcode{
+  height:26px; margin-top:16px; border-radius:4px;
+  background:repeating-linear-gradient(90deg, var(--text) 0 2px, transparent 2px 5px, var(--text) 5px 7px, transparent 7px 12px);
+  opacity:.55;
+}
+.ticket-name{ font-size:15px; color:var(--muted); }
+.ticket-name b{ color:var(--text); }
+.check{
+  width:52px; height:52px; border-radius:50%; background:var(--teal-soft); color:var(--teal);
+  display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 14px;
+}
+
+/* ===== admin ===== */
+.admin-fab{
+  position:fixed; inset-inline-end:18px; bottom:18px; z-index:20;
+  background:var(--bg-soft); border:1.5px solid var(--border); color:var(--muted);
+  border-radius:999px; padding:10px 16px; font-size:12.5px; font-weight:600;
+  display:flex; align-items:center; gap:6px; box-shadow:0 8px 24px -8px rgba(0,0,0,0.5);
+}
+.admin-fab:hover{ color:var(--text); border-color:var(--accent); }
+
+.overlay{
+  position:fixed; inset:0; background:rgba(6,8,12,0.72); backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center; z-index:50; padding:16px;
+}
+.overlay.show{ display:flex; }
+.panel{
+  width:100%; max-width:520px; max-height:86vh; overflow:auto;
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:24px;
+}
+.panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.panel-head h2{ font-size:17px; font-weight:800; }
+.close-x{ background:transparent; color:var(--muted); font-size:20px; line-height:1; padding:4px 8px; border-radius:8px; }
+.close-x:hover{ color:var(--text); background:var(--bg-soft); }
+
+.order-row{
+  border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px;
+  background:var(--bg-soft);
+}
+.order-row .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
+.order-row .name{ font-weight:700; font-size:14.5px; }
+.order-row .code{ font-family:'JetBrains Mono',monospace; color:var(--accent); font-size:12.5px; }
+.order-row .meta{ font-size:12.5px; color:var(--muted); line-height:2; }
+.order-row .meta b{ color:var(--text); font-weight:500; }
+.row-actions{ display:flex; gap:8px; margin-top:10px; }
+.btn-sm{ padding:8px 12px; border-radius:9px; font-size:12.5px; font-weight:700; }
+.btn-danger{ background:var(--danger-soft); color:var(--danger); }
+.btn-danger:hover{ background:var(--danger); color:#2a0d0b; }
+.empty{ text-align:center; color:var(--muted); font-size:13.5px; padding:30px 10px; }
+
+.gate{ text-align:center; }
+.gate p{ color:var(--muted); font-size:13.5px; margin:8px 0 18px; }
+.gate input{ text-align:center; letter-spacing:3px; margin-bottom:12px; }
+
+.loading{ text-align:center; color:var(--muted); font-size:13px; padding:20px; }
+.spin{ display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; margin-inline-end:8px; vertical-align:-3px; }
+@keyframes sp{ to{ transform:rotate(360deg); } }
+
+.notice{ font-size:11.5px; color:var(--muted); text-align:center; margin-top:14px; opacity:.75; }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="wizardWrap">
+  <div class="eyebrow"><span class="dot"></span> فرم ثبت سفارش</div>
+  <div class="card">
+
+    <div id="formView">
+      <h1 id="stepTitle">نام و نام خانوادگی</h1>
+      <p class="sub" id="stepSub">لطفاً نام کامل خودتان را وارد کنید.</p>
+
+      <div class="route" id="route"></div>
+
+      <div id="stepBody"></div>
+
+      <div class="nav">
+        <button class="btn btn-ghost" id="backBtn" style="visibility:hidden;">قبلی</button>
+        <button class="btn btn-primary" id="nextBtn">بعدی</button>
+      </div>
+    </div>
+
+    <div class="ticket" id="ticketView">
+      <div class="check">✓</div>
+      <h1>سفارش شما ثبت شد</h1>
+      <p class="sub">کد سفارش خود را نزد خود نگه دارید.</p>
+      <div class="stub">
+        <div class="label">کد پیگیری سفارش</div>
+        <div class="code mono" id="codeOut">—</div>
+        <div class="barcode"></div>
+      </div>
+      <p class="ticket-name">ثبت‌شده برای <b id="nameOut">—</b></p>
+      <div class="nav" style="margin-top:20px;">
+        <button class="btn btn-primary" id="resetBtn">ثبت سفارش جدید</button>
+      </div>
+    </div>
+
+  </div>
+  <p class="notice">اطلاعات این فرم روی سرور مشترک ذخیره می‌شود و از طریق پنل مدیریت قابل مشاهده است.</p>
+</div>
+
+<button class="admin-fab" id="adminFab">⚙ پنل مدیریت</button>
+
+<div class="overlay" id="adminOverlay">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>پنل مدیریت سفارش‌ها</h2>
+      <button class="close-x" id="closeAdmin">✕</button>
+    </div>
+    <div id="adminBody"></div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+// این رمز فقط یک محافظ ساده در سمت مرورگر است، نه یک سیستم امنیتی واقعی.
+// پیشنهاد می‌شود قبل از استفاده واقعی آن را تغییر دهید.
+const ADMIN_PASSCODE = "1404";
+
+/* ================= STATE ================= */
+const steps = [
+  { key:'fullName', title:'نام و نام خانوادگی', sub:'لطفاً نام کامل خودتان را وارد کنید.', label:'نام و نام خانوادگی', placeholder:'مثلاً علی رضایی', icon:'👤', type:'text' },
+  { key:'postal',   title:'کد پستی', sub:'کد پستی ۱۰ رقمی محل تحویل را وارد کنید.', label:'کد پستی', placeholder:'مثلاً ۱۹۳۴۹۱۳۵۸۸', icon:'📮', type:'tel' },
+  { key:'address',  title:'آدرس', sub:'آدرس کامل تحویل سفارش را بنویسید.', label:'آدرس به صورت متنی', placeholder:'استان، شهر، خیابان، پلاک، واحد...', icon:null, type:'textarea' },
+  { key:'rubikaId', title:'آی‌دی روبیکا', sub:'آی‌دی روبیکای خودتان (ثبت‌کننده سفارش) را وارد کنید.', label:'آی‌دی روبیکا', placeholder:'مثلاً @your_id', icon:'💬', type:'text' },
+];
+
+let step = 0;
+let formData = { fullName:'', postal:'', address:'', rubikaId:'' };
+let adminAuthed = false;
+
+/* ================= HELPERS ================= */
+function toEnDigits(s){
+  const fa='۰۱۲۳۴۵۶۷۸۹', ar='٠١٢٣٤٥٦٧٨٩';
+  return s.replace(/[۰-۹]/g, d=>fa.indexOf(d)).replace(/[٠-٩]/g, d=>ar.indexOf(d));
+}
+function normalizeName(n){ return n.trim().replace(/\s+/g,' ').toLowerCase(); }
+function generateCode(){
+  const t = Date.now().toString(36).toUpperCase().slice(-4);
+  const r = Math.floor(1000 + Math.random()*9000);
+  return `SF-${t}-${r}`;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ================= RENDER: ROUTE ================= */
+function renderRoute(){
+  const route = document.getElementById('route');
+  route.innerHTML = '';
+  steps.forEach((s,i)=>{
+    const stop = document.createElement('div');
+    stop.className = 'stop' + (i<step ? ' done' : i===step ? ' active' : '');
+    stop.textContent = i<step ? '✓' : (i+1);
+    route.appendChild(stop);
+    if(i < steps.length-1){
+      const seg = document.createElement('div');
+      seg.className = 'seg';
+      const fill = document.createElement('i');
+      fill.style.width = (i < step ? '100%' : '0%');
+      seg.appendChild(fill);
+      route.appendChild(seg);
+    }
+  });
+}
+
+/* ================= RENDER: STEP ================= */
+function renderStep(){
+  const s = steps[step];
+  document.getElementById('stepTitle').textContent = s.title;
+  document.getElementById('stepSub').textContent = s.sub;
+  const body = document.getElementById('stepBody');
+
+  let fieldHtml;
+  if(s.type === 'textarea'){
+    fieldHtml = `<textarea id="fieldInput" placeholder="${s.placeholder}">${esc(formData[s.key])}</textarea>`;
+  } else if(s.icon){
+    fieldHtml = `<div class="icon-input"><span>${s.icon}</span><input type="${s.type}" id="fieldInput" placeholder="${s.placeholder}" value="${esc(formData[s.key])}"></div>`;
+  } else {
+    fieldHtml = `<input type="${s.type}" id="fieldInput" placeholder="${s.placeholder}" value="${esc(formData[s.key])}">`;
+  }
+
+  const hint = s.key==='postal' ? '<div class="hint">کد پستی باید ۱۰ رقم باشد.</div>' : '';
+
+  body.innerHTML = `
+    <div class="field" id="fieldWrap">
+      <label>${s.label}</label>
+      ${fieldHtml}
+      ${hint}
+      <div class="err" id="fieldErr">این فیلد را کامل کنید.</div>
+    </div>`;
+
+  document.getElementById('backBtn').style.visibility = step===0 ? 'hidden' : 'visible';
+  document.getElementById('nextBtn').textContent = step === steps.length-1 ? 'ثبت سفارش' : 'بعدی';
+
+  const input = document.getElementById('fieldInput');
+  input.addEventListener('input', ()=>{ document.getElementById('fieldWrap').classList.remove('invalid'); });
+  input.focus();
+
+  renderRoute();
+}
+
+function validateCurrent(){
+  const s = steps[step];
+  const input = document.getElementById('fieldInput');
+  let val = toEnDigits(input.value).trim();
+  const wrap = document.getElementById('fieldWrap');
+  const errEl = document.getElementById('fieldErr');
+
+  if(!val){
+    wrap.classList.add('invalid'); errEl.textContent = 'این فیلد را کامل کنید.'; return false;
+  }
+  if(s.key === 'postal'){
+    if(!/^\d{10}$/.test(val)){
+      wrap.classList.add('invalid'); errEl.textContent = 'کد پستی باید دقیقاً ۱۰ رقم باشد.'; return false;
+    }
+  }
+  if(s.key === 'fullName' && val.length < 3){
+    wrap.classList.add('invalid'); errEl.textContent = 'نام کامل را وارد کنید.'; return false;
+  }
+  formData[s.key] = val;
+  return true;
+}
+
+document.getElementById('nextBtn').addEventListener('click', async ()=>{
+  if(!validateCurrent()) return;
+  if(step === steps.length-1){
+    await submitOrder();
+  } else {
+    step++; renderStep();
+  }
+});
+document.getElementById('backBtn').addEventListener('click', ()=>{
+  if(step>0){ step--; renderStep(); }
+});
+
+/* ================= SUBMIT ================= */
+async function submitOrder(){
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = true;
+  nextBtn.innerHTML = '<span class="spin"></span> در حال ثبت...';
+
+  try{
+    const normalized = normalizeName(formData.fullName);
+    let code = null;
+
+    try{
+      const idx = await window.storage.get('nameindex:' + normalized, true);
+      if(idx && idx.value) code = idx.value;
+    } catch(e){ /* no existing index for this name */ }
+
+    if(!code){
+      code = generateCode();
+      await window.storage.set('nameindex:' + normalized, code, true);
+    }
+
+    const order = {
+      fullName: formData.fullName,
+      postal: formData.postal,
+      address: formData.address,
+      rubikaId: formData.rubikaId,
+      normalizedName: normalized,
+      orderCode: code,
+      createdAt: Date.now()
+    };
+    await window.storage.set('order:' + code, JSON.stringify(order), true);
+
+    document.getElementById('codeOut').textContent = code;
+    document.getElementById('nameOut').textContent = formData.fullName;
+    document.getElementById('formView').style.display = 'none';
+    document.getElementById('ticketView').classList.add('show');
+
+  } catch(e){
+    alert('ثبت سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید.');
+  } finally {
+    nextBtn.disabled = false;
+    nextBtn.textContent = 'ثبت سفارش';
+  }
+}
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  step = 0;
+  formData = { fullName:'', postal:'', address:'', rubikaId:'' };
+  document.getElementById('ticketView').classList.remove('show');
+  document.getElementById('formView').style.display = 'block';
+  renderStep();
+});
+
+/* ================= ADMIN ================= */
+const overlay = document.getElementById('adminOverlay');
+document.getElementById('adminFab').addEventListener('click', ()=>{
+  overlay.classList.add('show');
+  renderAdmin();
+});
+document.getElementById('closeAdmin').addEventListener('click', ()=> overlay.classList.remove('show'));
+overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.classList.remove('show'); });
+
+function renderAdmin(){
+  const body = document.getElementById('adminBody');
+  if(!adminAuthed){
+    body.innerHTML = `
+      <div class="gate">
+        <div class="check" style="background:var(--accent-soft); color:var(--accent);">🔒</div>
+        <p>برای مشاهده سفارش‌ها رمز عبور را وارد کنید.</p>
+        <input type="text" id="passInput" placeholder="رمز عبور">
+        <div class="err" id="passErr" style="display:none;">رمز اشتباه است.</div>
+        <div class="nav"><button class="btn btn-primary" id="passSubmit">ورود</button></div>
+      </div>`;
+    document.getElementById('passSubmit').addEventListener('click', ()=>{
+      const val = document.getElementById('passInput').value;
+      if(val === ADMIN_PASSCODE){
+        adminAuthed = true;
+        renderAdmin();
+      } else {
+        document.getElementById('passErr').style.display = 'block';
+      }
+    });
+    document.getElementById('passInput').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') document.getElementById('passSubmit').click();
+    });
+    return;
+  }
+
+  body.innerHTML = `<div class="loading"><span class="spin"></span> در حال بارگذاری سفارش‌ها...</div>`;
+  loadOrders();
+}
+
+async function loadOrders(){
+  const body = document.getElementById('adminBody');
+  try{
+    const listRes = await window.storage.list('order:', true);
+    const keys = (listRes && listRes.keys) ? listRes.keys : [];
+    if(keys.length === 0){
+      body.innerHTML = `<div class="empty">هنوز سفارشی ثبت نشده است.</div>`;
+      return;
+    }
+    const orders = [];
+    for(const k of keys){
+      try{
+        const r = await window.storage.get(k, true);
+        if(r && r.value) orders.push(JSON.parse(r.value));
+      } catch(e){ /* skip broken entry */ }
+    }
+    orders.sort((a,b)=> a.createdAt - b.createdAt); // oldest (first) order at top
+
+    let html = `<div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span class="hint">${orders.length} سفارش — قدیمی‌ترین در بالا</span>
+        ${orders.length>0 ? '<button class="btn-sm btn-danger" id="completeFirst">تکمیل سفارش اول (حذف)</button>' : ''}
+      </div>`;
+
+    orders.forEach(o=>{
+      const d = new Date(o.createdAt);
+      const dateStr = d.toLocaleDateString('fa-IR') + ' ' + d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
+      html += `
+        <div class="order-row" data-code="${esc(o.orderCode)}" data-name="${esc(o.normalizedName)}">
+          <div class="top">
+            <div class="name">${esc(o.fullName)}</div>
+            <div class="code">${esc(o.orderCode)}</div>
+          </div>
+          <div class="meta">
+            کد پستی: <b>${esc(o.postal)}</b><br>
+            آدرس: <b>${esc(o.address)}</b><br>
+            آی‌دی روبیکا: <b>${esc(o.rubikaId)}</b><br>
+            ثبت‌شده: <b>${dateStr}</b>
+          </div>
+          <div class="row-actions">
+            <button class="btn-sm btn-danger" data-action="complete">تکمیل و حذف این سفارش</button>
+          </div>
+        </div>`;
+    });
+
+    body.innerHTML = html;
+
+    document.querySelectorAll('.order-row [data-action="complete"]').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        const row = e.target.closest('.order-row');
+        await deleteOrder(row.dataset.code, row.dataset.name);
+        renderAdmin();
+      });
+    });
+    const cf = document.getElementById('completeFirst');
+    if(cf){
+      cf.addEventListener('click', async ()=>{
+        const first = orders[0];
+        await deleteOrder(first.orderCode, first.normalizedName);
+        renderAdmin();
+      });
+    }
+
+  } catch(e){
+    body.innerHTML = `<div class="empty">خطا در بارگذاری اطلاعات.</div>`;
+  }
+}
+
+async function deleteOrder(code, normalizedName){
+  try{ await window.storage.delete('order:' + code, true); } catch(e){}
+  try{ await window.storage.delete('nameindex:' + normalizedName, true); } catch(e){}
+}
+
+/* ================= INIT ================= */
+renderStep();
+</script>
+</body>
+</html>
